@@ -1,0 +1,69 @@
+The data cleaning has been primarily performed in R, although the initial visualization was performed on SAS Enterprise. The code in R is as follows:
+
+#1. Importing the dataset
+claims <- read.csv("C:/Users/welcome/Desktop/Projects/Big Data/claims.csv")
+
+#2. Exploratory Analysis
+dim(claims)
+str(claims)
+
+#We can observe a total of 25 columns and 134,004 rows
+
+#3. Converting to data.table for faster cleaning
+install.packages("data.table")
+library(data.table)
+
+x <- data.table(claims)
+
+#4. Converting the variables to suitable data types
+
+library(lubridate)
+
+#Dates
+x$IncidentDate <- mdy(claims$IncidentDate)
+x$EmploymentStartDate <- mdy(x$EmploymentStartDate)
+x$ReturnToWorkDate <- mdy(x$ReturnToWorkDate)
+x$ClaimOpenedDate <- mdy(x$ClaimOpenedDate)
+x$ClaimClosedDate <- mdy(x$ClaimClosedDate)
+x$EmployerNotificationDate <- mdy(x$EmployerNotificationDate)
+x$ClaimReceivedDate <- mdy(x$ClaimReceivedDate)
+
+#Numerical
+x$ClaimantAge_at_DOI <- as.numeric(as.character(x$ClaimantAge_at_DOI))
+x$AverageWeeklyWage <- as.numeric(as.character(x$AverageWeeklyWage))
+
+#Strings
+
+x$ClaimantStatus_End <- as.character(x$ClaimantStatus_End)
+x$IncidentDescription <- as.character(x$IncidentDescription)
+x$OSHAInjuryDescription <- as.character(x$OSHAInjuryDescription)
+x$Gender <- as.character(x$Gender)
+x$ClaimantType <- as.character(x$ClaimantType)
+x$InjuryCause <- as.character(x$InjuryCause)
+x$InjuryNature <- as.character(x$InjuryNature)
+x$BodyPart <- as.character(x$BodyPart)
+x$BodyPartRegion <- as.character(x$BodyPartRegion)
+
+#5. Cleaning the Data - Row Removal
+
+#Step 1- Strings
+
+stringclean <- x[!(BodyPart == "Not Available") & !(BodyPartRegion == "Not Available") & !(Gender == "Not Available")]
+
+#Step 2 - Numerics
+
+numclean <- stringclean[TotalPaid_End >= 0 & IndemnityPaid >= 0 & OtherPaid >= 0]
+
+#Step 3 - Dates
+
+datesclean1 <- numclean[IncidentDate > 1947]
+datesclean2 <- datesclean1[-(which(year(x$ClaimReceivedDate) > 2016))]
+final <- as.data.frame(datesclean2)
+
+#6. Exporting to csv
+
+write.csv(final, file = "claimsfinal.csv")nrow()
+
+
+
+
